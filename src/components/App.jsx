@@ -79,6 +79,7 @@ export default class App extends Component {
   handleClickImg = event => {
     const imgForModal = event.target.dataset.src;
     const altForModal = event.target.alt;
+
     this.setState({
       showModal: true,
       modalImg: imgForModal,
