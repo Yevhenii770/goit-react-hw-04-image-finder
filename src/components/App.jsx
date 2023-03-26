@@ -45,7 +45,10 @@ export default function App() {
             setStatus('idle');
           }
         })
-        .catch(error => (setError(error), setStatus('rejected')));
+        .catch(error => setError(error));
+      if (error) {
+        setStatus('rejected');
+      }
     }
   }, [name, page]);
 
