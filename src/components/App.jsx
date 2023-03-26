@@ -135,5 +135,7 @@ export default function App() {
       );
     case 'rejected':
       return <h1>{error}</h1>;
+    default:
+      <h2>There's nothing here, everything's broken</h2>;
   }
 }
