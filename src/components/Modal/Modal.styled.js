@@ -11,9 +11,8 @@ export const ModalBackdrop = styled.div`
 `;
 
 export const ModalContent = styled.div`
-  background-color: white;
+  background-color: black;
   position: absolute;
-
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);

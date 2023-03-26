@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import { useState, useEffect } from 'react';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -9,39 +9,22 @@ import Spinner from './Loader/Loader';
 import ButtonLoadMore from './Button/Button';
 import Modal from './Modal/Modal';
 
-export default class App extends Component {
-  state = {
-    status: 'idle',
-    name: '',
-    query: [],
-    page: 1,
-    showModal: false,
-    modalImg: '',
-    error: null,
-    modalAlt: '',
-    btnActivate: true,
-  };
+export default function App() {
+  const [status, setStatus] = useState('idle');
+  const [name, setName] = useState('');
+  const [query, setQuery] = useState([]);
+  const [page, setPage] = useState(1);
+  const [showModal, setShowModal] = useState(false);
+  const [modalImg, setModalImg] = useState('');
+  const [error, setError] = useState(null);
+  const [modalAlt, setModalAlt] = useState('');
+  const [btnActivate, setBtnActivate] = useState(true);
 
-  componentDidUpdate(_, prevState) {
-    const prevQuery = prevState.name;
-    const nextQuery = this.state.name;
-
-    const prevPage = prevState.page;
-    const nextPage = this.state.page;
-    if (nextPage > 1) {
-      window.scrollTo({
-        top: document.documentElement.scrollHeight,
-        behavior: 'smooth',
-      });
-    }
-
-    if (prevQuery !== nextQuery) {
-      this.setState({ query: [], status: 'pending' });
-    }
-
-    if (prevQuery !== nextQuery || prevPage !== nextPage) {
+  useEffect(() => {
+    if (name !== '') {
+      setStatus('pending');
       pixabayApi
-        .fetchQuery(nextQuery, nextPage)
+        .fetchQuery(name, page)
         .then(({ hits }) => {
           const images = hits.map(
             ({ id, webformatURL, largeImageURL, tags }) => {
@@ -50,65 +33,57 @@ export default class App extends Component {
           );
 
           if (images.length > 0) {
-            this.setState(prevState => {
-              return {
-                query: [...prevState.query, ...images],
-                status: 'resolved',
-                btnActivate: true,
-              };
-            });
+            setQuery([...query, ...images]);
+            setStatus('resolved');
+            setBtnActivate(true);
+
             if (images.length > 0 && images.length < 12) {
-              this.setState({ btnActivate: false });
+              setBtnActivate(false);
             }
           } else {
-            alert(`No results found for ${nextQuery}.`);
-            this.setState({ status: 'idle' });
+            alert(`No results found for ${name}.`);
+            setStatus('idle');
           }
         })
-        .catch(error => this.setState({ error, status: 'rejected' }));
+        .catch(error => (setError(error), setStatus('rejected')));
     }
-  }
+  }, [name, page]);
 
-  handleSubmitInput = newQuery => {
-    if (newQuery === this.state.name) {
+  const handleSubmitInput = newQuery => {
+    if (newQuery === name) {
       return;
     }
-    this.setState({ name: newQuery, page: 1, status: 'pending' });
+    setQuery([]);
+    setName(newQuery);
+    setPage(1);
+    setStatus('pending');
   };
 
-  handleClickImg = event => {
+  const handleClickImg = event => {
     const imgForModal = event.target.dataset.src;
     const altForModal = event.target.alt;
 
-    this.setState({
-      showModal: true,
-      modalImg: imgForModal,
-      modalAlt: altForModal,
-    });
+    setShowModal(true);
+    setModalImg(imgForModal);
+    setModalAlt(altForModal);
   };
 
-  handleClickBtn = () => {
-    this.setState(({ page }) => {
-      return { page: page + 1, status: 'pending' };
-    });
+  const handleClickBtn = () => {
+    setPage(page + 1);
+    setStatus('pending');
   };
 
-  toggleModal = () => {
-    this.setState(({ showModal }) => ({
-      showModal: !showModal,
-    }));
+  const toggleModal = () => {
+    setShowModal(!showModal);
   };
 
-  render() {
-    const { query, showModal, modalImg, modalAlt, error, status, btnActivate } =
-      this.state;
-
-    if (status === 'idle') {
+  switch (status) {
+    case 'idle':
       return (
         <div>
-          <Searchbar onSubmit={this.handleSubmitInput} />
+          <Searchbar onSubmit={handleSubmitInput} />
 
-          <ImageGallery query={this.state.query} />
+          <ImageGallery query={query} />
 
           <ToastContainer
             position="top-right"
@@ -125,27 +100,21 @@ export default class App extends Component {
           />
         </div>
       );
-    }
 
-    if (status === 'pending') {
+    case 'pending':
       return (
         <div>
-          <Searchbar onSubmit={this.handleSubmitInput} />
+          <Searchbar onSubmit={handleSubmitInput} />
           {query.length > 0 && <ImageGallery query={query} />}
           <Spinner />
         </div>
       );
-    }
 
-    if (status === 'rejected') {
-      return <h1>{error.message}</h1>;
-    }
-
-    if (status === 'resolved') {
+    case 'resolved':
       return (
         <>
           {showModal && (
-            <Modal onClose={this.toggleModal}>
+            <Modal onClose={toggleModal}>
               <img
                 style={{ borderRadius: '8px' }}
                 src={modalImg}
@@ -154,15 +123,14 @@ export default class App extends Component {
             </Modal>
           )}
           <div>
-            <Searchbar onSubmit={this.handleSubmitInput} />
-            <ImageGallery onClickImg={this.handleClickImg} query={query} />
+            <Searchbar onSubmit={handleSubmitInput} />
+            <ImageGallery onClickImg={handleClickImg} query={query} />
 
-            {btnActivate && (
-              <ButtonLoadMore handleClickBtn={this.handleClickBtn} />
-            )}
+            {btnActivate && <ButtonLoadMore handleClickBtn={handleClickBtn} />}
           </div>
         </>
       );
-    }
+    case 'rejected':
+      return <h1>{error}</h1>;
   }
 }
