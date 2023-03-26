@@ -50,7 +50,7 @@ export default function App() {
         setStatus('rejected');
       }
     }
-  }, [name, page]);
+  }, [name, page, error]);
 
   const handleSubmitInput = newQuery => {
     if (newQuery === name) {
